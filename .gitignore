@@ -1,0 +1,19 @@
+# Python 缓存与虚拟环境
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.pytmp/
+.tmp/
+
+# 运行时与个人校准数据（由本机重新标定生成，不入库）
+data/*.json
+data/*.log
+audit_logs/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,7 @@
+# 统一换行为 LF：地址表的 sha256 依赖工作区字节完全一致，避免 Windows 克隆后校验失败
+* text=auto eol=lf
+
+# 图片按二进制处理
+*.png binary
+*.jpg binary
+*.jpeg binary

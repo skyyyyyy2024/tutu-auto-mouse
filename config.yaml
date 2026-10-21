@@ -1,0 +1,146 @@
+camera:
+  index: 0
+  width: 1280
+  height: 720
+  fps: 30
+  mirror: true                # 画面左右镜像（符合直觉）
+tracking:
+  min_cutoff: 0.5             # One Euro Filter 最小截止频率（越小越稳、延迟越大）
+  beta: 0.002                 # One Euro Filter 速度系数（越小移动越平滑）
+  d_cutoff: 1.0               # One Euro Filter 微分截止频率
+  lost_face_timeout: 0.5      # 秒，丢失人脸超过该时间则暂停移动光标
+  deadzone_px: 30             # 与当前光标距离小于该值则不更新（死区，像素）
+  feature_median_window: 3    # 特征层小窗口中值平滑（1=关闭）
+  feature_ema_alpha: 0.5      # 特征层 EMA 系数（1=关闭）
+  stability_window: 0.3       # 秒，注视稳定判定窗口
+  stability_std_px: 1.5       # 窗口内抖动小于该值则锁定光标（像素）
+click:
+  mode: "blink_sequence"      # blink_sequence | dwell | both | none
+  close_ratio: 0.60           # EAR < 基线*0.60 判定为闭眼
+  open_ratio: 0.75            # EAR > 基线*0.75 判定为睁眼（迟滞，防抖）
+  blink_min_duration: 0.06    # 闭眼短于该值视为噪声，忽略
+  blink_max_duration: 0.50    # 闭眼长于该值视为非有意眨眼，丢弃整个序列
+  group_gap: 0.50             # 两次眨眼的睁眼间隔 <= 该值则属于同一组；超过则结算
+  max_blinks: 6               # 超过此次数的序列忽略
+  freeze_lookback: 0.30       # 点击位置快照：取序列第一次闭眼开始前 0.3 秒的光标位置
+  cooldown: 0.6               # 动作执行后的最小间隔
+  actions:                    # 键=连续次数，值=动作名
+    1: "none"
+    2: "left_click"
+    3: "right_click"
+    4: "double_click"
+    5: "toggle_drag"
+    6: "none"
+  dwell_time: 1.2             # 注视停留触发时间（秒）
+  dwell_radius: 40            # 像素，停留判定半径
+calibration:
+  grid: 3                     # 3x3 = 9 点
+  margin: 0.08                # 校准点距屏幕边缘的比例
+  settle_time: 1.0            # 每点先等待用户找到点
+  sample_time: 1.5            # 然后采样时长
+  poly_degree: 2
+  ridge_alpha: 1.0
+  file: "data/calibration.json"
+  practice_blinks: true       # 校准后是否进入眨眼练习
+head_motion_calibration:
+  enabled: true               # 是否在 9 点校准后追加头动补偿校准
+  points: 5                   # 头动阶段注视点数（中心 + 四角附近）
+  per_point_seconds: 8.0      # 每个点的采样时长（秒）
+  settle_time: 1.0            # 每个点开始前的对齐时间（秒）
+  max_yaw_deg: 35.0           # 采样时允许的最大偏航角，超出丢弃
+  max_pitch_deg: 30.0         # 采样时允许的最大俯仰角，超出丢弃
+  max_roll_deg: 30.0          # 采样时允许的最大翻滚角，超出丢弃
+  pose_margin_deg: 5.0        # 判定超范围的边界余量
+  out_of_range_step_px: 25.0  # 运行中头姿超范围时每帧最大位移（限幅）
+  ridge_alphas: [0.1, 0.3, 1.0, 3.0, 10.0]   # 交叉验证候选 alpha
+  cv_folds: 5                 # 交叉验证折数
+face_profile:
+  enabled: true               # 是否启用个人面部标定（首次运行先做面部标定）
+  samples: 150                # 面部标定目标有效帧数（丢脸/异常帧自动丢弃）
+  eyeball_offset: 0.5         # 眼球中心沿头坐标系 z 轴后移比例（相对两外眼角距离）
+  focal_scale: 1.0            # 焦距 = 图像宽度 * focal_scale
+  reprojection_error_px: 8.0  # 重投影误差阈值（像素），超过则标记该帧不可信
+  smoothing_alpha: 0.6        # 头姿角度时间平滑系数（1=不平滑）
+  file: "data/face_profile.json"   # 个人模板保存路径（必须在 data/ 内）
+head_control:
+  enabled: true               # 允许用面部朝向控制光标（与眼控并存）
+  default_source: "eye"       # 启动时的光标来源：eye（眼控，默认）| head（头控）
+  mode: "absolute"            # velocity（摇杆式，转头即移动）| absolute（角度直映射位置，最跟手）
+  deadzone_deg: 4.0           # 中性区角度：头姿在此范围内光标不动
+  max_yaw_deg: 22.0           # 达到最大速度/满屏偏转的 yaw 角度
+  max_pitch_deg: 16.0         # 达到最大速度/满屏偏转的 pitch 角度
+  speed_px_s: 900.0           # velocity 模式最大移动速度（像素/秒）
+  response: 1.6               # 速度曲线指数（>1 更细腻）
+  smoothing_alpha: 0.6        # 速度平滑系数（1=不平滑）
+  invert_x: true              # 左右方向反了就改为 true（本机摄像头画面为镜像，实测两边都需反转）
+  invert_y: true              # 上下方向反了就改为 true（本机实测需反转）
+  diagonal_boost: 0.5         # 对角方向（左下/右下等）额外增益：纯对角最多 ×(1+boost)
+  translation_weight: 0.5     # 脸部左右平移计入水平方向的比例（0=不用；负值可翻转）
+  translation_range: 0.25     # 平移满量程（归一化画面宽度，越小越灵敏）
+hand_control:
+  enabled: true               # 启用手控模块（眼控/头控仍保留）
+  pointer_source: "hand"      # eye | hand | hybrid（hand=仅张开手掌时用手移动光标）
+  mirror_handedness: false    # 是否互换左右手标签：camera.mirror=true 时 MediaPipe 已按自拍视角给出正确标签，保持 false；若把 camera.mirror 关成 false 才改为 true
+  open_ratio: 1.1             # 张开判定比例（指尖到手腕 / 指节到手腕）
+  finger_spread_min: 0.25     # 相邻指尖最小间距（相对掌宽），排除四指并拢
+  enter_frames: 5             # 连续满足多少帧进入 OPEN
+  exit_frames: 5              # 连续不满足多少帧退出 OPEN
+  lost_timeout: 0.3           # 手丢失多久立即退出（秒）
+  mapping: "relative"         # relative（增量，防跳变）| absolute（画面位置直映射）
+  gain: 2.4                   # 手位移 -> 光标位移增益（relative）
+  active_region: 0.6          # absolute 满量程区域（画面比例，默认中间 60%）
+  min_cutoff: 0.8             # 手部 One Euro min_cutoff（独立于眼控）
+  beta: 0.01                  # 手部 One Euro beta
+  deadzone_px: 12.0           # 手控死区（像素）
+  hand_every_n_frames: 1      # 每 N 帧检测一次手（降 CPU）
+  suspend_blink_while_hand: false   # gate 打开时暂停眨眼点击
+  tracking_point: "thumb_tip" # 光标以哪个关键点为准：thumb_tip 拇指指尖（默认）| palm 手掌中心 | wrist 手腕 | index_tip 食指指尖
+  require_thumb: true         # 张开判定是否必须拇指伸出；拇指动作影响开关时改为 false
+camera_calibration:            # 摄像头内参标定（ChArUco）；长度单位一律为米
+  dictionary: "DICT_5X5_50"    # 必须与打印板一致
+  squares_x: 8                 # 方格列数（squares_x*squares_y 必须为偶数）
+  squares_y: 6                 # 方格行数
+  square_length_m: 0.025       # 方格边长（米）：打印后必须用直尺实测核验
+  marker_length_m: 0.018       # 标记边长（米）：必须小于方格边长
+  min_views: 15                # 有效视图下限（建议 15~20）
+  min_corners_per_view: 12     # 单个视图最少 ChArUco 角点数
+  coverage_cells: 3            # 画面覆盖度网格 NxN
+  coverage_min_cells: 6        # 至少覆盖多少格才不警告
+  duplicate_distance: 0.02     # 归一化角点均方距离小于该值视为重复视角
+  file: "data/camera_calibration.json"
+glasses_tracking:              # 眼镜 ArUco 标记追踪（阶段一默认关闭，不改变现有手控/眼控/头控）
+  enabled: false               # 阶段一默认关闭
+  marker_id: 0
+  dictionary: "DICT_5X5_50"
+  marker_size_m: 0.030         # 标记真实边长（米）：必须实测，程序不猜
+  subpixel_win: 5              # 亚像素精化窗口（1~21 的奇数）
+  min_marker_area_px: 400.0    # 标记面积下限（像素^2）
+  max_reprojection_error_px: 3.0
+  ambiguity_reproj_margin_px: 0.5   # 候选解重投影差小于该值且角度差大 -> AMBIGUOUS
+  ambiguity_angle_deg: 12.0
+  ambiguity_evidence_px: 0.15   # 冷启动时多帧证据判定阈值：两支平均 RMS 差需超过该值
+  acquisition_frames: 20        # 歧义证据累积帧数（约 0.7 秒）
+  ambiguity_branch_angle_deg: 25.0  # 把同一解的多帧观测归并到同一支的旋转容差
+  max_linear_speed_m_s: 1.5    # 平动速度上限（异常拒绝）
+  max_angular_speed_deg_s: 400.0
+  gap_reset_s: 0.5             # 间隔超过该值重置速度与滤波状态
+  slerp_alpha: 0.35            # 旋转 SLERP 平滑系数（1=不平滑）
+  translation_alpha: 0.35      # 平移独立平滑系数（1=不平滑）
+  stabilize_frames: 5          # 重新获取后需连续多少帧才恢复 TRACKING
+  stale_timeout_s: 0.5         # 超过该时间无有效观测则标记 stale
+  stats_period_s: 2.0          # --glasses-test 定时统计间隔
+  stability_window_s: 10.0     # 静止稳定性统计窗口
+  compare_facemesh: false      # 可选：与 FaceMesh 头姿做抖动对比（默认关闭，避免影响 FPS）
+  compare_facemesh: false      # 可选 FaceMesh 对比（默认关闭）
+safety:
+  pause_key: "f9"             # 暂停/恢复
+  quit_key: "f10"             # 退出
+  recalibrate_key: "f8"       # 重新校准
+  toggle_click_key: "f7"      # 开关点击功能
+  cycle_mode_key: "f6"        # 循环切换 click.mode
+  cursor_key: "f5"            # 循环切换光标来源（eye <-> head）
+  baseline_key: "f4"          # 一键基准点校准：把当前头姿设为零点（头控用）
+debug:
+  show_window: true           # 显示摄像头小窗与叠加层
+  log_level: "INFO"
+  log_file: "data/run.log"
